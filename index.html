@@ -2,10 +2,10 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Sigil Test - Light to Line</title>
+<title>Sigil Test - Light Motion</title>
 <style>
   body {
-    background: #fff; /* 背景をシロに変更 */
+    background: #fff; /* 背景シロ */
     display: flex;
     justify-content: center;
     align-items: center;
@@ -16,38 +16,47 @@
     width: 300px;
   }
   path, circle {
-    stroke: #111; /* 線をクロに変更 */
+    stroke: #111; /* 線クロ */
     fill: none;
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
     opacity: 0;
-    filter: url(#soft-blur); /* 線のトゲを消すふんわりフィルター */
+    filter: url(#soft-blur);
   }
 
-  /* --- ① 光の粒子の設定 --- */
+  /* --- 光の粒子（黒い点）の動き回り設定 --- */
   #glow-particle {
-    fill: #111; /* 光の玉も今回はクロ（淡い影のような光） */
+    fill: #111;
     stroke: none;
     opacity: 0;
-    /* 動きまわる変化（位置と不透明度）を滑らかにする設定 */
-    transition: transform 1.2s cubic-bezier(0.25, 1, 0.5, 1), opacity 0.6s ease;
+    
+    /* 動き回るルート（見えないガイド線）を指定：中心から左を回り、上へと昇る曲線 */
+    offset-path: path("M 100,100 C 50,120 30,60 100,30");
+    offset-rotate: 0deg;
   }
 
-  /* --- アニメーション制御用のクラス --- */
+  /* クラスがついたら1.5秒かけてルートを走り回る */
+  .move-particle {
+    opacity: 0.7;
+    /* transitionで位置（offset-distance）を0%から100%へ動かす。緩急（cubic-bezier）をつけて生き物っぽく */
+    transition: offset-distance 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+    offset-distance: 100%;
+  }
+
+  /* --- 各パーツの出現設定 --- */
   .fade-in {
     transition: opacity 0.6s ease;
     opacity: 1;
   }
 
-  /* 線がじわっと浮き上がりながら伸びる（1.8秒） */
   .draw-line {
     transition: stroke-dashoffset 1.8s ease-in-out, opacity 1.8s ease-in-out;
+    stroke-dashoffset: 300;
     stroke-dashoffset: 0;
     opacity: 1;
   }
 
-  /* 外円がゆっくり閉じる（1.2秒） */
   .draw-circle {
     opacity: 1;
     transition: stroke-dashoffset 1.2s ease-in-out;
@@ -59,7 +68,6 @@
 
 <svg viewBox="0 0 200 200">
   <defs>
-    <!-- 全体をふんわり煙らせるフィルター -->
     <filter id="soft-blur" x="-20%" y="-20%" width="140%" height="140%">
       <feGaussianBlur stdDeviation="0.6" result="blur" />
       <feMerge>
@@ -69,8 +77,8 @@
     </filter>
   </defs>
 
-  <!-- 先行する光の粒子（最初は中心付近に配置） -->
-  <circle id="glow-particle" cx="100" cy="100" r="4" />
+  <!-- 光の粒子（最初はoffset-pathの始点に配置されるためcx, cyは不要） -->
+  <circle id="glow-particle" r="4" offset-distance="0%" />
 
   <!-- ①葉っぱ -->
   <circle id="leaf" cx="100" cy="30" r="3" />
@@ -102,42 +110,40 @@
   const symbol2 = document.getElementById("symbol2");
   const outer = document.getElementById("outer");
 
-  // === タイムライン（全体で約3.5秒の設計） ===
+  // === 新しいタイムライン（光の動きを1.5秒しっかり見せる） ===
 
-  // 0.0秒: 光の粒子がふんわり現れて、シジルの始点（100, 30）へ向かって動き回る
+  // 0.0秒: 黒い点が現れ、シジルの左側を大きく回り込むようにシュルッと動き出す
   setTimeout(() => {
-    particle.style.opacity = "0.7";
-    // 画面中央から始点へ、少しカーブを描くように移動（今回は簡易的にトランスフォームで制御）
-    particle.style.transform = "translate(0px, -50px)";
+    particle.classList.add("move-particle");
   }, 10);
 
-  // 0.5秒: 光が動き回っている最中に、最初の「葉っぱ」がふんわり出現
+  // 1.2秒: 点が動き終わる（1.5秒）の「少し手前（0.3秒前）」で、始点の葉っぱがふんわり出現
   setTimeout(() => {
     leaf.classList.add("fade-in");
-  }, 500);
+  }, 1200);
 
-  // 0.8秒: 光が始点に到達し、じわーっと消えていく（残光フェードアウト開始）
-  // ★ここの「0.8秒」のタイミングで、すでにシジルの線も同時に描き始め、0.2〜0.3秒ほど「光の残光」と重ならせます
+  // 1.5秒: 点が目的地（始点）に到達すると同時に、じわっと消え始める（残光化）
+  // 同時に、そのエネルギーを引き継ぐようにシジルの線がふんわり伸び始める（ここで0.何秒かの綺麗な重なりが発生）
   setTimeout(() => {
-    particle.style.opacity = "0"; // 光はここで消え始める（残光化）
-    line.classList.add("draw-line"); // 線がふんわり伸び始める（重なりスタート）
-  }, 800);
+    particle.style.opacity = "0"; // ここから残光フェードアウト
+    line.classList.add("draw-line"); // 線が伸び始める
+  }, 1500);
 
-  // 2.3秒: 線が描き終わる直前（0.8s + 1.8s = 2.6s の少し前）、終点〇が出現
+  // 3.0秒: 線が伸びる終盤で終点〇が出現
   setTimeout(() => {
     end.classList.add("fade-in");
-  }, 2300);
+  }, 3000);
 
-  // 2.5秒: 他の記号がふんわり出現
+  // 3.2秒: 他の記号が出現
   setTimeout(() => {
     symbol1.classList.add("fade-in");
     symbol2.classList.add("fade-in");
-  }, 2500);
+  }, 3200);
 
-  // 2.6秒: すべてのパーツが揃うのとほぼ同時に、外円が上からぐるっと回り始める
+  // 3.3秒: 外円が上からぐるっと回り始める（全体で約4.5秒ほどで着地）
   setTimeout(() => {
     outer.classList.add("draw-circle");
-  }, 2600); // 1.2秒かけて回るので、3.8秒あたりで完全静止
+  }, 3300);
 </script>
 
 </body>
