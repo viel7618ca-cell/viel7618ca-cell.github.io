@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Sigil Test - Fade In</title>
+<title>Sigil Test - Soft Draw</title>
 <style>
   body {
     background: #111; /* テスト用に黒のままにしています */
@@ -21,56 +21,66 @@
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    /* 基本のフェード時間は1.2秒に設定 */
-    transition: opacity 1.2s ease, mask-position 1.2s ease-out;
-  }
-  
-  /* --- 案A: マスクによる遅延フェード用の設定 --- */
-  #line {
-    /* グラデーションマスクを作成（左側が不透明、右側が透明） */
-    -webkit-mask-image: linear-gradient(to right, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 60%);
-    mask-image: linear-gradient(to right, rgba(0,0,0,1) 40%, rgba(0,0,0,0) 60%);
+    opacity: 0; /* 最初は隠しておく */
     
-    /* マスクのサイズを線の2倍にして、最初は「透明な部分」だけが見える位置にずらしておく */
-    -webkit-mask-size: 200% 100%;
-    mask-size: 200% 100%;
-    -webkit-mask-position: 100% 0;
-    mask-position: 100% 0;
+    /* ふんわり感を出すため、自作の「光のボカシフィルター」を適用 */
+    filter: url(#soft-glow);
   }
 
-  /* マスクが移動して、じわっと現れた状態のクラス */
-  #line.revealed {
-    -webkit-mask-position: 0 0;
-    mask-position: 0 0;
-    opacity: 1; /* hiddenクラスと併用するため明示的に指定 */
+  /* --- アニメーション制御用のクラス --- */
+  .fade-in {
+    transition: opacity 0.8s ease;
+    opacity: 1;
   }
-  /* ------------------------------------------- */
 
-  /* 最初は全員隠しておく */
-  .hidden {
-    opacity: 0;
+  .draw-line {
+    opacity: 1;
+    /* 線の進行方向に沿って滑らかに伸びる設定（時間は1.5秒かけてじっくり） */
+    transition: stroke-dashoffset 1.5s ease-in-out;
+    stroke-dashoffset: 0;
+  }
+
+  .draw-circle {
+    opacity: 1;
+    /* 外円がぐるっと一周して閉じる設定（時間は1.2秒） */
+    transition: stroke-dashoffset 1.2s ease-out;
+    stroke-dashoffset: 0;
   }
 </style>
 </head>
 <body>
 
 <svg viewBox="0 0 200 200">
+  <defs>
+    <!-- 輪郭をふんわりと煙らせるためのフィルター定義 -->
+    <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
+      <!-- ほんの少しだけ線をぼかす（この数値を大きくするとさらに煙のようになります） -->
+      <feGaussianBlur stdDeviation="0.8" result="blur" />
+      <feMerge>
+        <feMergeNode in="blur" />
+        <feMergeNode in="SourceGraphic" />
+      </feMerge>
+    </filter>
+  </defs>
 
   <!-- ①葉っぱ -->
-  <circle id="leaf" cx="100" cy="30" r="3" class="hidden"/>
+  <circle id="leaf" cx="100" cy="30" r="3" />
 
-  <!-- ②線（hiddenクラスを追加し、mask設定をCSSで行う） -->
-  <path id="line" d="M100 30 L150 100 L50 150 L120 170" class="hidden" />
+  <!-- ②線（書いた順に伸びるようダッシュ設定：長さ300をあらかじめずらしておく） -->
+  <path id="line" d="M100 30 L150 100 L50 150 L120 170" 
+        stroke-dasharray="300" stroke-dashoffset="300" />
 
   <!-- ③終点〇 -->
-  <circle id="end" cx="120" cy="170" r="5" class="hidden"/>
+  <circle id="end" cx="120" cy="170" r="5" />
 
   <!-- ④他記号 -->
-  <circle id="symbol1" cx="150" cy="100" r="4" class="hidden"/>
-  <circle id="symbol2" cx="50" cy="150" r="4" class="hidden"/>
+  <circle id="symbol1" cx="150" cy="100" r="4" />
+  <circle id="symbol2" cx="50" cy="150" r="4" />
 
-  <!-- ⑤外円 -->
-  <circle id="outer" cx="100" cy="100" r="90" class="hidden"/>
+  <!-- ⑤外円（ぐるっと閉じるようダッシュ設定：外周2×π×r ≒ 566） -->
+  <circle id="outer" cx="100" cy="100" r="90" 
+          stroke-dasharray="566" stroke-dashoffset="566"
+          transform="rotate(-90 100 100)" /> <!-- 真上から描き始めるための回転 -->
 
 </svg>
 
@@ -82,32 +92,31 @@
   const symbol2 = document.getElementById("symbol2");
   const outer = document.getElementById("outer");
 
-  // ①葉っぱ：スッと現れる
+  // ①葉っぱ：ふんわり出現
   setTimeout(() => {
-    leaf.classList.remove("hidden");
+    leaf.classList.add("fade-in");
   }, 200);
 
-  // ②線：始点から終点へ向かってじわーっとマスクが移動して現れる（一番時間をかける）
+  // ②線：先端がボケながら進行方向に沿ってふんわり伸びる
   setTimeout(() => {
-    line.classList.remove("hidden"); // opacityを0->1へ
-    line.classList.add("revealed"); // マスクを移動させる（順番に現れる感）
-  }, 600);
+    line.classList.add("draw-line");
+  }, 800);
 
-  // ③終点〇：線がほぼ現れきったタイミングで
+  // ③終点〇：線が終点に到達する直前、あるいは到達した瞬間にふんわり出現
   setTimeout(() => {
-    end.classList.remove("hidden");
-  }, 1800); // 線のフェード（1.2s）が終わる頃
+    end.classList.add("fade-in");
+  }, 2100); // 線の開始（800）＋伸びる時間（1500）の少し前
 
-  // ④他記号：少し置いてから
+  // ④他記号：一拍置いてふんわり出現
   setTimeout(() => {
-    symbol1.classList.remove("hidden");
-    symbol2.classList.remove("hidden");
-  }, 2200);
+    symbol1.classList.add("fade-in");
+    symbol2.classList.add("fade-in");
+  }, 2500);
 
-  // ⑤外円：最後に全体を包むように
+  // ⑤外円：最後に真上からぐるっと円を描くように閉じる
   setTimeout(() => {
-    outer.classList.remove("hidden");
-  }, 2800);
+    outer.classList.add("draw-circle");
+  }, 3200);
 </script>
 
 </body>
