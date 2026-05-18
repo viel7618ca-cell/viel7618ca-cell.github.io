@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Sigil Test - Light Motion</title>
+<title>Sigil Test - Light Motion Fix</title>
 <style>
   body {
     background: #fff; /* 背景シロ */
@@ -25,22 +25,21 @@
     filter: url(#soft-blur);
   }
 
-  /* --- 光の粒子（黒い点）の動き回り設定 --- */
+  /* --- 【修正】光の粒子（黒い点）の設定 --- */
   #glow-particle {
-    fill: #111;
+    fill: #111; /* 塗りをクロに */
     stroke: none;
-    opacity: 0;
+    opacity: 0; /* 最初は非表示 */
     
-    /* 動き回るルート（見えないガイド線）を指定：中心から左を回り、上へと昇る曲線 */
-    offset-path: path("M 100,100 C 50,120 30,60 100,30");
+    /* 動き回るルート（中心100,100 から左に大きく回り込んで 始点100,30 へ） */
+    offset-path: path("M 100,100 C 30,130 20,50 100,30");
     offset-rotate: 0deg;
   }
 
-  /* クラスがついたら1.5秒かけてルートを走り回る */
+  /* クラスがついたら、即座に表示して1.5秒かけてルートを走り回る */
   .move-particle {
-    opacity: 0.7;
-    /* transitionで位置（offset-distance）を0%から100%へ動かす。緩急（cubic-bezier）をつけて生き物っぽく */
-    transition: offset-distance 1.5s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.5s ease;
+    opacity: 0.8 !important; /* バグ修正：確実にハッキリ見えるように強制適用 */
+    transition: offset-distance 1.5s cubic-bezier(0.25, 1, 0.5, 1);
     offset-distance: 100%;
   }
 
@@ -52,7 +51,6 @@
 
   .draw-line {
     transition: stroke-dashoffset 1.8s ease-in-out, opacity 1.8s ease-in-out;
-    stroke-dashoffset: 300;
     stroke-dashoffset: 0;
     opacity: 1;
   }
@@ -77,8 +75,8 @@
     </filter>
   </defs>
 
-  <!-- 光の粒子（最初はoffset-pathの始点に配置されるためcx, cyは不要） -->
-  <circle id="glow-particle" r="4" offset-distance="0%" />
+  <!-- 【修正】視認性を上げるため、点の半径（r）を少しだけ大きく「6」にしました -->
+  <circle id="glow-particle" r="6" offset-distance="0%" />
 
   <!-- ①葉っぱ -->
   <circle id="leaf" cx="100" cy="30" r="3" />
@@ -110,26 +108,25 @@
   const symbol2 = document.getElementById("symbol2");
   const outer = document.getElementById("outer");
 
-  // === 新しいタイムライン（光の動きを1.5秒しっかり見せる） ===
-
-  // 0.0秒: 黒い点が現れ、シジルの左側を大きく回り込むようにシュルッと動き出す
+  // 0.0秒: 黒い点が中央付近に現れ、大きなカーブを描いてシュルッと走り出す
   setTimeout(() => {
     particle.classList.add("move-particle");
-  }, 10);
+  }, 50);
 
-  // 1.2秒: 点が動き終わる（1.5秒）の「少し手前（0.3秒前）」で、始点の葉っぱがふんわり出現
+  // 1.2秒: 点が目的地に届く直前で、始点の葉っぱがふんわり出現
   setTimeout(() => {
     leaf.classList.add("fade-in");
   }, 1200);
 
-  // 1.5秒: 点が目的地（始点）に到達すると同時に、じわっと消え始める（残光化）
-  // 同時に、そのエネルギーを引き継ぐようにシジルの線がふんわり伸び始める（ここで0.何秒かの綺麗な重なりが発生）
+  // 1.5秒: 点が目的地（始点）に到達すると同時に、フッと消える（残光フェードアウト）
+  // それと入れ替わりで、線がふんわりと伸び始める（ここで綺麗な重なりが発生）
   setTimeout(() => {
-    particle.style.opacity = "0"; // ここから残光フェードアウト
-    line.classList.add("draw-line"); // 線が伸び始める
+    particle.style.transition = "opacity 0.4s ease"; // スッと消えるための設定に切り替え
+    particle.style.opacity = "0"; 
+    line.classList.add("draw-line"); 
   }, 1500);
 
-  // 3.0秒: 線が伸びる終盤で終点〇が出現
+  // 3.0秒: 終点〇が出現
   setTimeout(() => {
     end.classList.add("fade-in");
   }, 3000);
@@ -140,7 +137,7 @@
     symbol2.classList.add("fade-in");
   }, 3200);
 
-  // 3.3秒: 外円が上からぐるっと回り始める（全体で約4.5秒ほどで着地）
+  // 3.3秒: 外円が上からぐるっと回り始める
   setTimeout(() => {
     outer.classList.add("draw-circle");
   }, 3300);
