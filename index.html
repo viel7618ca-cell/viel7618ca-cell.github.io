@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Sigil Test - Circle Speed Fix</title>
+<title>Sigil Test - Final Adjustment</title>
 <style>
   body {
     background: #111;
@@ -36,10 +36,11 @@
     opacity: 1;
   }
 
-  /* --- 外円の動きの修正：1.8秒にスピードを落とし、ゆったり閉じさせる --- */
+  /* --- 外円の動きをさらにゆっくり（2.0s）に変更 --- */
   .draw-circle {
     opacity: 1;
-    transition: stroke-dashoffset 1.8s ease-in-out; /* ease-outから滑らかなイージングに変更 */
+    /* 2.0秒かけて、静かに円を閉じる */
+    transition: stroke-dashoffset 2.0s ease-out, opacity 1.5s ease-in-out;
     stroke-dashoffset: 0;
   }
 </style>
@@ -57,25 +58,16 @@
     </filter>
   </defs>
 
-  <!-- ①葉っぱ -->
   <circle id="leaf" cx="100" cy="30" r="3" />
-
-  <!-- ②線 -->
   <path id="line" d="M100 30 L150 100 L50 150 L120 170" 
         stroke-dasharray="300" stroke-dashoffset="300" />
-
-  <!-- ③終点〇 -->
   <circle id="end" cx="120" cy="170" r="5" />
-
-  <!-- ④他記号 -->
   <circle id="symbol1" cx="150" cy="100" r="4" />
   <circle id="symbol2" cx="50" cy="150" r="4" />
 
-  <!-- ⑤外円 -->
   <circle id="outer" cx="100" cy="100" r="90" 
           stroke-dasharray="566" stroke-dashoffset="566"
           transform="rotate(-90 100 100)" />
-
 </svg>
 
 <script>
@@ -86,31 +78,31 @@
   const symbol2 = document.getElementById("symbol2");
   const outer = document.getElementById("outer");
 
-  // ①葉っぱ
+  // ① 葉っぱ
   setTimeout(() => {
     leaf.classList.add("fade-in");
   }, 200);
 
-  // ②線
+  // ② 線 (1.8s)
   setTimeout(() => {
     line.classList.add("draw-line");
   }, 800);
 
-  // ③終点〇
+  // ③ 終点〇
   setTimeout(() => {
     end.classList.add("fade-in");
   }, 2300);
 
-  // ④他記号
+  // ④ 他記号
   setTimeout(() => {
     symbol1.classList.add("fade-in");
     symbol2.classList.add("fade-in");
   }, 2700);
 
-  // ⑤外円：線が描き終わる余韻を受け継いで、ゆったりと回り始める
+  // ⑤ 外円 (2.0sかけてゆっくり描画)
   setTimeout(() => {
     outer.classList.add("draw-circle");
-  }, 3400);
+  }, 3500);
 </script>
 
 </body>
