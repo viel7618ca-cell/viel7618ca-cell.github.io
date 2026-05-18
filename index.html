@@ -2,7 +2,7 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Sigil Test - Sparkling Motion</title>
+<title>Sigil Test - Perfect Timing & Fade</title>
 <style>
   body {
     background: #fff;
@@ -25,37 +25,33 @@
     filter: url(#soft-blur);
   }
 
-  /* --- 【修正】メインの光の粒子（シャープに小さく） --- */
+  /* --- メインの光の粒子 --- */
   #glow-particle {
     fill: #111;
     stroke: none;
     opacity: 0;
-    /* 中心から左に回り込んで始点（100,30）へ向かう見えない道路 */
     offset-path: path("M 100,100 C 30,130 20,50 100,30");
     offset-rotate: 0deg;
   }
 
-  /* --- 【新規】追いかけるキラキラ粒子（子） --- */
+  /* --- 追いかけるキラキラ粒子（子） --- */
   .sparkle {
     fill: #111;
     stroke: none;
     opacity: 0;
-    /* メインと全く同じ道路を敷く */
     offset-path: path("M 100,100 C 30,130 20,50 100,30");
     offset-rotate: 0deg;
   }
 
-  /* --- アニメーション制御（緩急をつけて泳がせる） --- */
+  /* --- アニメーション制御 --- */
   .move-main {
     opacity: 0.8 !important;
     transition: offset-distance 1.5s cubic-bezier(0.25, 1, 0.5, 1);
     offset-distance: 100%;
   }
 
-  /* キらキラ粒子：メインよりほんの少しだけ遅れて追従させる */
   .move-sparkle1 {
     opacity: 0.5 !important;
-    /* わずかに速度やタイミングを変えて、パラパラした質感にする */
     transition: offset-distance 1.4s cubic-bezier(0.25, 1, 0.5, 1);
     offset-distance: 98%;
   }
@@ -63,6 +59,17 @@
     opacity: 0.3 !important;
     transition: offset-distance 1.45s cubic-bezier(0.3, 1, 0.6, 1);
     offset-distance: 95%;
+  }
+
+  /* --- 【修正】着地後の消え方：キラキラがその場に残りながらじわっと消える設定 --- */
+  .fade-out-main {
+    transition: opacity 0.2s ease !important;
+    opacity: 0 !important;
+  }
+  .fade-out-sparkle {
+    /* 0.8秒かけて、その場に留まったままゆっくり空気中に溶ける */
+    transition: opacity 0.8s ease-out !important;
+    opacity: 0 !important;
   }
 
   /* --- シジル各パーツ --- */
@@ -97,11 +104,8 @@
     </filter>
   </defs>
 
-  <!-- 【新規】キラキラの残光粒子（メインの後ろを追うために先に記述） -->
   <circle id="sparkle2" class="sparkle" r="1.2" offset-distance="0%" />
   <circle id="sparkle1" class="sparkle" r="1.8" offset-distance="0%" />
-
-  <!-- 【修正】メインの点を半径「2.5」に縮小してシャープに -->
   <circle id="glow-particle" r="2.5" offset-distance="0%" />
 
   <!-- ①葉っぱ -->
@@ -137,24 +141,28 @@
   const symbol2 = document.getElementById("symbol2");
   const outer = document.getElementById("outer");
 
-  // 0.0秒: メインの小さな点と、キラキラたちが時間差でシュルッと泳ぎ出す
+  // 0.0秒: 光たちがシュルッと泳ぎ出す
   setTimeout(() => {
     particle.classList.add("move-main");
     sp1.classList.add("move-sparkle1");
     sp2.classList.add("move-sparkle2");
   }, 50);
 
-  // 1.2秒: 目的地に届く直前で始点が出現
+  // 1.2秒: 目的地に届く直前で始点（葉っぱ）が出現
   setTimeout(() => {
     leaf.classList.add("fade-in");
   }, 1200);
 
-  // 1.5秒: 目的地に集結した瞬間にすべての光がフッと消え、線がふんわり伸び始める
+  // 【修正】1.5秒: メイン光が着地した瞬間に「完全同時」で処理を分ける
   setTimeout(() => {
-    // まとめてフェードアウト
-    particle.style.transition = sp1.style.transition = sp2.style.transition = "opacity 0.4s ease";
-    particle.style.opacity = sp1.style.opacity = sp2.style.opacity = "0";
+    // 1. メインの点は役割を終えてスッと消える
+    particle.classList.add("fade-out-main");
     
+    // 2. 後ろにいたキラキラたちは、その場に残りながらじわ〜っとフェードアウト（0.8秒かける）
+    sp1.classList.add("fade-out-sparkle");
+    sp2.classList.add("fade-out-sparkle");
+    
+    // 3. 同時に、待たせることなくシジルの線がふんわり描き始める
     line.classList.add("draw-line"); 
   }, 1500);
 
