@@ -2,10 +2,10 @@
 <html lang="ja">
 <head>
 <meta charset="UTF-8">
-<title>Sigil Test - Soft Draw</title>
+<title>Sigil Test - Soft Draw Fix</title>
 <style>
   body {
-    background: #111; /* テスト用に黒のままにしています */
+    background: #111;
     display: flex;
     justify-content: center;
     align-items: center;
@@ -21,28 +21,25 @@
     stroke-width: 2;
     stroke-linecap: round;
     stroke-linejoin: round;
-    opacity: 0; /* 最初は隠しておく */
-    
-    /* ふんわり感を出すため、自作の「光のボカシフィルター」を適用 */
+    opacity: 0;
     filter: url(#soft-glow);
   }
 
-  /* --- アニメーション制御用のクラス --- */
   .fade-in {
     transition: opacity 0.8s ease;
     opacity: 1;
   }
 
+  /* --- 線の動きの修正：速度を落とし、フェードインも同時にかける --- */
   .draw-line {
-    opacity: 1;
-    /* 線の進行方向に沿って滑らかに伸びる設定（時間は1.5秒かけてじっくり） */
-    transition: stroke-dashoffset 1.5s ease-in-out;
+    /* 1.8秒かけて、じわっと浮き上がりながら、ゆっくり進行方向に伸びる */
+    transition: stroke-dashoffset 1.8s ease-in-out, opacity 1.8s ease-in-out;
     stroke-dashoffset: 0;
+    opacity: 1;
   }
 
   .draw-circle {
     opacity: 1;
-    /* 外円がぐるっと一周して閉じる設定（時間は1.2秒） */
     transition: stroke-dashoffset 1.2s ease-out;
     stroke-dashoffset: 0;
   }
@@ -52,9 +49,7 @@
 
 <svg viewBox="0 0 200 200">
   <defs>
-    <!-- 輪郭をふんわりと煙らせるためのフィルター定義 -->
     <filter id="soft-glow" x="-20%" y="-20%" width="140%" height="140%">
-      <!-- ほんの少しだけ線をぼかす（この数値を大きくするとさらに煙のようになります） -->
       <feGaussianBlur stdDeviation="0.8" result="blur" />
       <feMerge>
         <feMergeNode in="blur" />
@@ -66,7 +61,7 @@
   <!-- ①葉っぱ -->
   <circle id="leaf" cx="100" cy="30" r="3" />
 
-  <!-- ②線（書いた順に伸びるようダッシュ設定：長さ300をあらかじめずらしておく） -->
+  <!-- ②線 -->
   <path id="line" d="M100 30 L150 100 L50 150 L120 170" 
         stroke-dasharray="300" stroke-dashoffset="300" />
 
@@ -77,10 +72,10 @@
   <circle id="symbol1" cx="150" cy="100" r="4" />
   <circle id="symbol2" cx="50" cy="150" r="4" />
 
-  <!-- ⑤外円（ぐるっと閉じるようダッシュ設定：外周2×π×r ≒ 566） -->
+  <!-- ⑤外円（この動きはキープ） -->
   <circle id="outer" cx="100" cy="100" r="90" 
           stroke-dasharray="566" stroke-dashoffset="566"
-          transform="rotate(-90 100 100)" /> <!-- 真上から描き始めるための回転 -->
+          transform="rotate(-90 100 100)" />
 
 </svg>
 
@@ -92,31 +87,31 @@
   const symbol2 = document.getElementById("symbol2");
   const outer = document.getElementById("outer");
 
-  // ①葉っぱ：ふんわり出現
+  // ①葉っぱ
   setTimeout(() => {
     leaf.classList.add("fade-in");
   }, 200);
 
-  // ②線：先端がボケながら進行方向に沿ってふんわり伸びる
+  // ②線：1.8秒かけてふんわりと這うように伸びる
   setTimeout(() => {
     line.classList.add("draw-line");
   }, 800);
 
-  // ③終点〇：線が終点に到達する直前、あるいは到達した瞬間にふんわり出現
+  // ③終点〇：線が終点に到達するタイミング（800 + 1800 = 2600）の少し手前
   setTimeout(() => {
     end.classList.add("fade-in");
-  }, 2100); // 線の開始（800）＋伸びる時間（1500）の少し前
+  }, 2300);
 
-  // ④他記号：一拍置いてふんわり出現
+  // ④他記号
   setTimeout(() => {
     symbol1.classList.add("fade-in");
     symbol2.classList.add("fade-in");
-  }, 2500);
+  }, 2700);
 
-  // ⑤外円：最後に真上からぐるっと円を描くように閉じる
+  // ⑤外円
   setTimeout(() => {
     outer.classList.add("draw-circle");
-  }, 3200);
+  }, 3400);
 </script>
 
 </body>
